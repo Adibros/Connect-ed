@@ -18,7 +18,19 @@ exports.register = async(req,res) =>{
             avatar:{public_id:"sample_id",url:"sampleurl"}
         });
 
-        res.status(201).json({success:true,user});
+        const token = await user.generateToken(); 
+
+    res
+    .status(200)
+    .cookie("token",token,{
+        expires: new Date(Date.now() + 90*24*60*60*1000),
+        httpOnly:true
+    })
+    .json({
+        success:true,
+        user,
+        token
+    })
 
     }catch(error){
         res.status(500).json({
@@ -57,7 +69,12 @@ exports.login = async(req,res) => {
 
     const token = await user.generateToken(); 
 
-    res.status(200).cookie("token",token)
+    res
+    .status(200)
+    .cookie("token",token,{
+        expires: new Date(Date.now() + 90*24*60*60*1000),
+        httpOnly:true
+    })
     .json({
         success:true,
         user,
