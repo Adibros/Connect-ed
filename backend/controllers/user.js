@@ -283,3 +283,61 @@ exports.deleteUser = async(req,res) => {
         })
     }
 }
+
+exports.myProfile = async(req,res) => {
+    try{
+        const user = await User.findById(req.user._id).populate("posts");
+
+        res.status(200).json({
+            success:true,
+            user
+        });
+    }catch(error){
+        return res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
+}
+
+
+exports.getUserProfile = async(req,res) => {
+    try {
+        
+        const user = await User.findById(req.params.id).populate("posts");
+
+        if(!user){
+            return res.status(404).json({
+                success:false,
+                message:"User Not Found"
+            })
+        }
+
+        res.status(200).json({
+            success:true,
+            user
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success:true,
+            message:error.message
+        })
+    }
+}
+
+exports.getAllUsers = async(req,res) => {
+    try {
+        const users = await User.find({});
+
+        res.status(200).json({
+            success:true,
+            users
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
+}
