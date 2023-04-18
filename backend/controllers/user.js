@@ -1,4 +1,5 @@
 const User = require("../model/user");
+const Post = require("../model/post");
 
 exports.register = async(req,res) =>{
     try{
@@ -220,6 +221,63 @@ exports.followUser = async(req,res) => {
         }
     }catch(error){
         res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
+}
+
+exports.deleteUser = async(req,res) => {
+
+    try {
+        
+        const user = await User.findById(req.user._id);
+        const posts = user.posts;
+
+        const followers = user.followers;
+        const following = user.following;
+        const userId = req.user._id;
+
+        await user.deleteOne();
+
+        //logging out
+        res.cookie("token",null , {
+            expires: new Date(Date.now()) , 
+            httpOnly:true
+        })
+
+        //deleting their posts
+        for(let i=0; i<posts.length ; i++){
+            const post = await Post.findById(posts[i]);
+            await post.deleteOne();
+        }
+
+        //removing user from followers following
+        for(let i =0;i<followers.length;i++){
+            const user = await User.findById(followers[i]);
+
+            const index = user.following.indexOf(userId);
+            user.following.splice(index,1);
+
+            await user.save();
+        }
+
+        //removing user from following followers
+        for(let i =0;i<following.length;i++){
+            const user = await User.findById(following[i]);
+
+            const index = user.followers.indexOf(userId);
+            user.followers.splice(index,1);
+
+            await user.save();
+        }
+
+        res.status(200).json({
+            success:true,
+            message:"User Deleted"
+        })
+    } catch (error) {
+        return res.status(500).json({
             success:false,
             message:error.message
         })

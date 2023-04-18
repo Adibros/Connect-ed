@@ -163,9 +163,21 @@ exports.updateCaption = async(req,res) => {
         
         const post = await Post.findById(req.params.id);
 
-        const { newCaption } = req.body;
+        if(!post){
+            return res.status(404).json({
+                success:false,
+                message:"Post not found"
+            })
+        }
 
-        post.caption = newCaption;
+        if(post.owner.toString() !== req.user._id.toString()){
+            return res.status(401).json({
+                success:false,
+                message:"Unauthorized"
+            })
+        }
+
+        post.caption = req.body.newCaption;
 
         await post.save();
 
