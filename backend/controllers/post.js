@@ -192,3 +192,135 @@ exports.updateCaption = async(req,res) => {
         })
     }
 }
+
+//this will add comment if not commented by this user or it will edit it if already commented by this user
+exports.addComment = async(req,res) => {
+
+    try {
+        const post = await Post.findById(req.params.id);
+
+        if(!post){
+            return res.status(404).json({
+                success:false,
+                message:"Post Not Found"
+            })
+        }
+
+        let commentExist = false;
+        let commentIndex = -1;
+
+        post.comments.forEach((item,index) => {
+            if(item.user.toString() === req.user._id.toString()){
+                commentExist = true;
+                commentIndex = index;
+            }
+        })
+
+        if(commentExist){
+            post.comments[commentIndex].comment = req.body.comment;
+
+            await post.save();
+
+            res.status(200).json({
+                success:true,
+                message:"comment updated"
+            })
+
+        }else{
+
+            let comment = {
+                user : req.user._id,
+                comment : req.body.comment
+            }
+
+            post.comments.push(comment);
+            await post.save();
+
+            res.status(200).json({
+                success:true,
+                message:"comment added"
+            })
+        }
+
+        post.comments.push()
+    } catch (error) {
+        return res.status(500).json({
+            success:true,
+            message:error.message
+        })
+    }
+}
+
+exports.deleteComment = async(req,res) => {
+    try {
+        
+        const post = await Post.findById(req.params.id);
+
+        if(!post){
+            return res.status(404).json({
+                success:false,
+                message:"Post Not Found"
+            })
+        }
+
+
+        // if post owner wants to delete any of his post comments
+        if(post.owner.toString() === req.user._id.toString()){
+
+            if(req.body.commentId == undefined){
+                return res.status(400).json({
+                    success:false,
+                    message:"Comment Id is required"
+                })
+            }
+
+            post.comments.forEach((item,index) => {
+                if(item._id.toString() === req.body.commentId.toString()){
+                    return post.comments.splice(index,1);
+                }
+            })
+
+            await post.save();
+
+            return res.status(200).json({
+                success:true,
+                message:"Selected comment deleted"
+            })
+        }// else if any other user wants to delete his own comment
+        else{
+
+
+            //also checking if the user is not trying to delete some other owner comment
+            let commentOwner = false;
+
+            // if(req.user.id !== )
+
+            post.comments.forEach((item,index) => {
+                if(item.user.toString() === req.user._id.toString() && item._id.toString() === req.body.commentId.toString()){
+                    commentOwner = true;
+                    return post.comments.splice(index,1);
+                }
+            })
+
+            if(!commentOwner){
+                return res.status(401).json({
+                    success:false,
+                    message:"Unauthorized"
+                })
+            }
+
+            await post.save();
+
+            res.status(200).json({
+                success:true,
+                message:"Your comment has deleted"
+            });
+        }
+        
+    } catch (error) {
+        return res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
+}
